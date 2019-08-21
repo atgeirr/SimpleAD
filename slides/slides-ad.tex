@@ -425,10 +425,6 @@ private:
   These exercises assume the file adexample-exercise.cpp is available.
 
   \begin{enumerate}
-  \item An AD class must handle expressions containing raw doubles, either
-    by a) including appropriate operators, or b) implicit conversions to the AD
-    type. {\em What approach has been used for SimpleAD in the example file? How
-      would the alternative approach have been implemented?}
   \item The example file contains a simple Newton's method that uses AD for
     its implementation. Read and understand \code{newtonUpdate()}. {\em
       Compile and run the example, verifying that it produces the expected result.}
@@ -438,6 +434,10 @@ private:
   \item There are still operators missing for more general expressions. {\em
       Uncomment ``part 2'' and add missing features until the example again
     compiles and runs successfully.}
+  \item An AD class must handle expressions containing raw doubles, either
+    by a) including appropriate operators, or b) implicit conversions to the AD
+    type. {\em What approach has been used for SimpleAD in the example file? How
+      would the alternative approach have been implemented?}
   \end{enumerate}
 
 \end{frame}
