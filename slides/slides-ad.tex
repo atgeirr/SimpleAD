@@ -1,0 +1,469 @@
+\documentclass[UKenglish,10pt]{beamer}
+\usepackage{amsmath, amsfonts, amssymb}
+\usepackage{pgf, tikz, bbm, svn, qtree}
+\usepackage[latin1]{inputenc}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{textcomp}
+\usepackage[vlined,oldcommands]{algorithm2e}    % For those with brand new LaTeX
+\usepackage{appendixnumberbeamer}
+\usepackage{listings}
+
+\usetikzlibrary{positioning}
+
+\mode<presentation>
+{
+  \usetheme{Sintef}
+%  \usetheme{Copenhagen}
+}
+
+\usefonttheme{professionalfonts}
+
+\definecolor{sintefblue}{rgb}{0.0,0.2,0.4}
+\definecolor{dr}{rgb}{0.6,0.0,0.0}
+\definecolor{dg}{rgb}{0.0,0.3,0.0}
+\definecolor{db}{rgb}{0.0,0.0,0.5}
+\setbeamercolor{uppercol}{fg=white,bg=sintefblue!80}
+\setbeamercolor{lowercol}{fg=orange,bg=black!15}
+\setbeamertemplate{footline}[frame number]
+
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+\newenvironment<>{myblock}[1]{%
+  \begin{actionenv}#2%
+      \def\insertblocktitle{#1}%
+      \par%
+      \mode<presentation>{%
+        \setbeamercolor{block title}{fg=white,bg=sintefblue}
+       \setbeamercolor{block body}{fg=black,bg=blue!5}
+       %\setbeamercolor{itemize item}{fg=orange!20!black}
+       \setbeamertemplate{itemize item}[triangle]
+     }%
+      \usebeamertemplate{block begin}}
+    {\par\usebeamertemplate{block end}\end{actionenv}}
+
+\newcommand{\COto}{CO\ensuremath{_\mathsf{2}}}
+\newcommand{\Tensor}[1]{\ensuremath{\mathsf{#1}}}
+\newcommand{\Vector}[1]{\ensuremath{\boldsymbol{#1}}}
+\newcommand{\Matrix}[1]{\ensuremath{\boldsymbol{#1}}}
+\newcommand{\T}        {\ensuremath{\mathsf{T}}}
+\newcommand{\Grad}     {\ensuremath{\nabla}}
+
+\newcommand{\dunemod}[1]{\textsl{dune-{#1}}}
+\newcommand{\opmmod} [1]{\textsl{opm{#1}}}
+\newcommand{\dumux}    {DuMu\ensuremath{^{\mathrm X}}}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Code}[1]{\texttt{#1}}
+\newcommand{\red}[1]{\color{red} #1}
+
+\newcommand{\Kb}{{\bf K}}
+\newcommand{\vb}{{\bf v}}
+\newcommand{\gb}{{\bf g}}
+\newcommand{\nb}{{\bf n}}
+\newcommand{\xb}{{\bf x}}
+\newcommand{\qb}{{\bf q}}
+\newcommand{\ub}{{\bf u}}
+
+\DeclareMathOperator{\Div}{div}
+\DeclareMathOperator{\adj}{adj}
+
+\newlength{\arrgh}
+\settowidth{\arrgh}{0.4121}
+
+
+
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
+\definecolor{lightgray}{gray}{0.3}
+\lstset{%
+  xleftmargin= 4pt,
+  xrightmargin=4pt}
+\lstdefinelanguage{MRST}{%
+  alsoletter={...},%
+  morekeywords={%                             % keywords
+  break,case,catch,continue,elseif,else,end,for,function,global,%
+  if,otherwise,persistent,return,switch,try,while,...},%
+  comment=[l]\%,%                             % comments
+  morecomment=[l]...,%                        % comments
+  morestring=[m]',%                           % strings
+}[keywords,comments,strings]%
+\lstset{
+  backgroundcolor=\color{lbcolor},
+  tabsize=4,
+  rulecolor=,
+  language=MRST,
+  basicstyle=\small,
+  upquote=true,
+  aboveskip={0.5\baselineskip},
+  columns=flexible,
+  showstringspaces=false,
+  extendedchars=true,
+%  breaklines=true,
+  prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+  frame=single,
+  showtabs=false,
+  showspaces=false,
+  showstringspaces=false,
+  identifierstyle=\ttfamily,
+  keywordstyle=\color[rgb]{0,0,1},
+  commentstyle=\color[rgb]{0.133,0.545,0.133},
+  stringstyle=\color[rgb]{0.627,0.126,0.941},
+}
+\newcommand{\mcode}[1]{\lstinline|#1|}
+
+\tikzset{Workflow Stage/.style=%
+        {rectangle, draw=blue!50, fill=blue!20, thick, %
+         text width=35mm}}
+
+
+\title{A simple introduction to automatic differentiation (AD)}
+\author[Atgeirr F. Rasmussen]{Atgeirr Fl{\o} Rasmussen}
+\institute[SINTEF]{SINTEF Digital, Mathematics and Cybernetics \\ \includegraphics[height=2cm]{figs/sintef_logo-400x4001}}
+\date[Geilo 2019]{INSPIRE summer school 2019 \\ Geilo, August 1, 2019}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+
+
+%============================================
+\section{Why use automatic differentiation}
+%============================================
+
+%---------------------------------
+\begin{frame}[fragile]
+  \frametitle{What does AD provide}
+  \begin{center}
+    \begin{tikzpicture}[auto]
+      \matrix[column sep=15mm,row sep=7mm, ampersand replacement=\&]
+      {
+        \node [Workflow Stage] (f-proglang)  {\verb|f(x) { ... }|}; \&
+        \node [Workflow Stage] (df-proglang) {\verb|df(x) { ... }|}; \\
+        \node [Workflow Stage] (f-analytic)  {$f(x)$}; \&
+        \node [Workflow Stage] (df-analytic) {$f'(x)$}; \\
+      };
+      \draw<2-> [->]             (f-analytic) -- (df-analytic);
+      \draw<2-> [->]             (f-analytic) -- (f-proglang);
+      \draw<2-> [->]             (df-analytic)-- (df-proglang);
+      \draw<3-> [->,thick,green] (f-proglang) -- (df-proglang);
+    \end{tikzpicture}
+  \end{center}
+
+  \begin{myblock}<2->{Traditional Process}
+    \begin{itemize}
+    \item Human implements code to evaluate $f(x)$
+    \item Manual or symbolic calculation to derive $f'(x)$
+    \item Human implements code to evaluate $f'(x)$
+    \end{itemize}
+  \end{myblock}
+
+  \begin{myblock}<3->{Automatic Differentiation (AD)}
+    \begin{itemize}
+    \item Human implements code to evaluate $f(x)$
+    \item Computer code to evaluate $f'(x)$ is automatically generated
+    \end{itemize}
+  \end{myblock}
+\end{frame}
+
+%--------------------
+\begin{frame}
+  \frametitle{Benefits of using AD}
+  AD makes it easier to create simulators:
+  \begin{itemize}
+  \item only specify nonlinear residual equation
+  \item automatically evaluates Jacobian
+  \item sparsity structure of Jacobian automatically generated
+  \end{itemize}
+  \bigskip
+
+  Note that AD is {\em not} the same as finite differencing!
+  \begin{itemize}
+  \item no need to define a 'small' epsilon
+  \item as precise as hand-made Jacobian
+  \item ... but much less work!
+  \end{itemize}
+  \bigskip
+
+  Performance (of equation assembly) will usually be somewhat slower than a
+  {\em good} hand-made Jacobian implementation.
+
+\end{frame}
+
+%--------------------
+\begin{frame}
+  \frametitle{Basic idea}
+  A numeric computation $y =  f(x)$ can be written ($D$ = derivative)
+  \begin{align*}
+    y_1 & = f_1(x)    & \frac{dy_1}{dx}(x) & = Df_1(x) \\
+    y_2 & = f_2(y_1) & \frac{dy_2}{dx}(x) & = Df_2 (y_1) \cdot Df_1(x) \\
+    & \vdots \\
+    y & = f_n(y_{n-1}) & \frac{dy}{dx}(x)  & = Df_n(y_{n-1}) \cdot
+    Df_{n-1}(y_{n-2}) \cdots Df_1(x) \\
+  \end{align*}
+  Automatic Differentiation:
+  \begin{itemize}
+  \item make each line an elementary operation
+  \item compute right derivative values as we go using chain rule
+  \end{itemize}
+\end{frame}
+
+%--------------------
+\begin{frame}
+  \frametitle{Implementation approaches}
+  Two main methods:
+  \begin{myblock}{Operator overloading}
+  \begin{itemize}
+  \item requires operator overloading in programming language
+  \item syntax (more or less) like before (non-AD)
+  \item efficiency can vary a lot, depends on usage scenario
+  \item easy to implement and experiment with
+  \item Examples: OPM, MRST, Sacado (Trilinos), ADOL-C
+  \end{itemize}
+  \end{myblock}
+  \begin{myblock}{Source transformation with AD tool}
+  \begin{itemize}
+  \item can be implemented for almost any language
+  \item may restrict language syntax or features used
+  \item efficiency can be high (depends on AD tool)
+  \item Examples: TAPENADE, OpenAD
+  \end{itemize}
+  \end{myblock}
+\end{frame}
+
+%--------------------
+\begin{frame}
+  \frametitle{Types of AD}
+  Two different approaches. \\
+  (We compute $f(x)$, $u$ is some intermediate variable.)
+
+  \begin{myblock}{Forward Mode}
+    Carry derivatives with respect to independent variables: $$(u, \frac{du}{dx})$$
+ \end{myblock}
+
+  \begin{myblock}{Reverse Mode}
+    Carry derivatives with respect to dependent variables (adjoints): $$(u, \frac{df}{du})$$
+ \end{myblock}
+
+\end{frame}
+
+%============================================
+%\section{Forward Mode AD}
+%============================================
+
+% %---------------------------------
+% \begin{frame}
+%   \frametitle{Overview of talk}
+%   \tableofcontents[currentsection]
+% \end{frame}
+
+%--------------------
+\begin{frame}
+  \frametitle{Forward AD example (1)}
+  Example function: $f(x) = x(sin(x^2) + 3x)$.
+
+  Sequence of elementary functions:
+  \begin{align*}
+    f_1(u) & = u^2 & f'_1(u) & = 2uu' \\
+    f_2(u) & = \sin(u)     & f'_2(u) & = \cos(u)u' \\
+    f_3(u) & = 3u            & f'_3(u) & = 3u' \\
+    f_4(u, v) & = u + v    & f'_4(u,v) & = u' + v' \\
+    f_5(u, v) & = u \cdot v    & f'_5(u,v) & = u'v + uv' \\
+  \end{align*}
+
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    Rewritten: $f(x) = f_5(x, f_4(f_2(f_1(x)), f_3(x)))$
+    \column{0.5\textwidth}
+    \Tree [.$f_5$ $x$ [.$f_4$ [.$f_2$ [.$f_1$ $x$ ] ] [.$f_3$ $x$ ] ] ]
+  \end{columns}
+\end{frame}
+
+%--------------------
+\begin{frame}
+  \frametitle{Forward AD example (2)}
+  Example function: $f(x) = x(sin(x^2) + 3x)$.
+  Computing $f(3), f'(3)$.
+  Sequence of elementary functions:
+  \begin{align*}
+    f_1(u) & = u^2 & f'_1(u) & = 2uu' \\
+    f_2(u) & = \sin(u)     & f'_2(u) & = \cos(u)u' \\
+    f_3(u) & = 3u            & f'_3(u) & = 3u' \\
+    f_4(u, v) & = u + v    & f'_4(u,v) & = u' + v' \\
+    f_5(u, v) & = u \cdot v    & f'_5(u,v) & = u'v + uv' \\
+  \end{align*}
+
+  \begin{columns}[c]
+    \column{0.5\textwidth}
+    \Tree
+    [.{\only<1-5>{$f_5$} \only<6>{\red $f_5$} \only<7->{28.2364}}
+    {\only<1>{\red $x$} \only<2->{3}}
+    [.{\only<1-4>{$f_4$} \only<5>{\red $f_4$} \only<6->{9.4121}}
+    [.{\only<1,2>{\makebox[\arrgh][c]{$f_2$}} \only<3>{\red \makebox[\arrgh][c]{$f_2$}} \only<4->{0.4121}}
+    [.{\only<1>{$f_1$} \only<2>{\red $f_1$} \only<3->{9}}
+    {\only<1>{\red $x$} \only<2->{3}}
+    ] ]
+    [.{\only<1-3>{$f_3$} \only<4>{\red $f_3$} \only<5->{9}}
+    {\only<1>{\red $x$} \only<2->{3}}
+    ] ] ]
+    \column{0.5\textwidth}
+    \Tree
+    [.{\only<1-5>{$f'_5$} \only<6>{\red $f'_5$} \only<7->{2.0118}}
+    {\only<1>{\red $x'$} \only<2->{1}}
+    [.{\only<1-4>{$f'_4$} \only<5>{\red $f'_4$} \only<6->{-2.4668}}
+    [.{\only<1,2>{\makebox[\arrgh][c]{$f'_2$}} \only<3>{\red \makebox[\arrgh][c]{$f'_2$}} \only<4->{-5.4668}}
+    [.{\only<1>{$f'_1$} \only<2>{\red $f'_1$} \only<3->{6}}
+    {\only<1>{\red $x'$} \only<2->{1}}
+    ] ]
+    [.{\only<1-3>{$f'_3$} \only<4>{\red $f'_3$} \only<5->{3}}
+    {\only<1>{\red $x'$} \only<2->{1}}
+    ] ] ]
+  \end{columns}
+\end{frame}
+
+%--------------------
+\begin{frame}
+  \frametitle{Properties of forward AD}
+  \begin{itemize}
+    \item Easy to implement with operator overloading
+    \item Storage required (scalar): $2 \times$ normal (value, derivative).
+    \item Storage required ($f: R^m \to R^n$): $(n+1) \times$ normal
+      (value, derivative vector), unless sparse.
+  \end{itemize}
+\end{frame}
+
+
+%---------------------------------
+\begin{frame}
+  \frametitle{Automatic Differentiation: OPM implementations}
+
+  Currently used:
+  \begin{myblock}{\code{class Evaluation}}
+    \begin{itemize}
+    \item class implementing {\em forward AD} 
+    \item deals with {\em a single scalar value} at a time
+    \item derivatives are {\em compile-time-size vectors}
+    \item implemented with operator overloading
+    \item discrete div, grad must be implemented ``manually''
+    \end{itemize}
+  \end{myblock}
+
+  No longer used:
+  \begin{myblock}{\code{class AutoDiffBlock}}
+    \begin{itemize}
+    \item class implementing {\em forward AD}
+    \item deals with {\em vectors of values} at a time
+    \item derivatives are {\em sparse matrices}
+    \item implemented with operator overloading
+    \item based on Eigen library for basic types and operands
+    \item helper library provides discrete div, grad etc.
+    \end{itemize}
+  \end{myblock}
+  \bigskip
+
+\end{frame}
+
+%---------------------------------
+\begin{frame}[fragile]
+  \frametitle{A simple (forward) AD example class}
+
+\begin{lstlisting}[language=c++]
+class SimpleAd
+{
+private:
+    double val_; // The value (corresponding to a regular double)
+    double der_; // The derivative (of this variable)
+ public:
+    SimpleAd(double val, double der) : val_(val), der_(der) {}
+    double value()      const { return val_; }
+    double derivative() const { return der_; }
+    SimpleAd operator+(const SimpleAd& rhs) const
+    {
+        // Derivative of sum is sum of derivatives.
+        return { val_ + rhs.val_, der_ + rhs.der_ };
+    }
+    SimpleAd operator*(const SimpleAd& rhs) const
+    {
+        // Derivative of product follows well-known product rule.
+        return { val_ * rhs.val_, der_ * rhs.val_ + val_ * rhs.der_ };
+    }
+};
+\end{lstlisting}
+
+
+\end{frame}
+
+%---------------------------------
+\begin{frame}
+  \frametitle{Exercises (part 1: making do without AD)}
+
+  These exercises assume the file newtonexample-exercise.cpp is available.
+
+  \begin{enumerate}
+  \item The example file contains a simple Newton's method that requires both
+    a function and its derivative to be passed. Read and understand the
+    function \code{newtonUpdate()}. {\em
+      Compile and run the example, verifying that it produces the expected result.}
+  \item Changing the function, you must also change the derivative function. {\em
+      Uncomment ``part 2'' and fix the derivative until the example again
+    compiles and runs successfully.}
+  \end{enumerate}
+
+\end{frame}
+
+
+
+%---------------------------------
+\begin{frame}
+  \frametitle{Exercises (part 2: using AD)}
+
+  These exercises assume the file adexample-exercise.cpp is available.
+
+  \begin{enumerate}
+  \item An AD class must handle expressions containing raw doubles, either
+    by a) including appropriate operators, or b) implicit conversions to the AD
+    type. {\em What approach has been used for SimpleAD in the example file? How
+      would the alternative approach have been implemented?}
+  \item The example file contains a simple Newton's method that uses AD for
+    its implementation. Read and understand \code{newtonUpdate()}. {\em
+      Compile and run the example, verifying that it produces the expected result.}
+  \item Functions such as sine, cosine and exponential require special
+    treatment. {\em Using the provided sin() function as an example,
+      implement a cos() function.}
+  \item There are still operators missing for more general expressions. {\em
+      Uncomment ``part 2'' and add missing features until the example again
+    compiles and runs successfully.}
+  \end{enumerate}
+
+\end{frame}
+
+
+
+
+%---------------------------------
+\begin{frame}
+  % \frametitle{}
+
+  \begin{centering}
+
+  {\bf Thank you for listening!}
+  \end{centering}
+\end{frame}
+
+
+
+\appendix
+
+\end{document}
+
+
+%%% Local Variables:
+%%% fill-column: 76
+%%% mode: LaTeX
+%%% TeX-master: t
+%%% End:

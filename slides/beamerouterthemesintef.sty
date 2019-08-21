@@ -1,0 +1,122 @@
+\ProvidesPackageRCS $Header:
+beamerouterthemesintef.sty,v 1.4 2004/10/07 22:21:16 tantau Exp $
+
+% Copyright 2003 by Till Tantau <tantau@users.sourceforge.net>
+%
+% This program can be redistributed and/or modified under the terms
+% of the GNU Public License, version 2.
+
+% Original beamerouterthemeshadow.sty modified by Stein Krogstad 2005/05/18
+
+\mode<presentation>
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Sintef-blå skrift/symboler i bunnteksten.                               %%%
+
+\setbeamercolor{footline}{fg=structure}
+
+
+%%% Fjerner navigasjonssymbolene som gjør seg dårlig på standard plassering %%%
+%%% for dette temaet. Kan evt sette inn ett eller flere i bunnteksten.      %%%
+
+\setbeamertemplate{navigation symbols}{}
+
+
+%%% Laster inn venstre (sintef_logo_left.jpg) og høyre (sintef_logo_right)  %%%
+%%% side av Sintef-banneren. Midten defineres under.                        %%%
+
+\pgfdeclareimage[height=0.43cm]{sintef_l}{sintef_logo_left}
+\pgfdeclareimage[height=0.43cm]{sintef_r}{sintef_logo_right}
+
+
+%%% Definerer bunnteksten med Sintef-banner med lengde definert ved wd=..   %%%
+%%% under. Til høyre settes evt navigasjons-symboler (s.56 i manual) eller  %%%
+%%% shorttitle/shortdate/framenumber etc. (s.49 i manual). Banner-bredden   %%%
+%%% kan reduseres for å få plass til mer stæsj.                             %%%
+
+\defbeamertemplate*{footline}{split theme}
+{
+  \leavevmode
+  \hbox{\begin{beamercolorbox}[wd=.79\paperwidth,ht=0.43cm]{frametitle}%%  Samme farge som frametitle %%
+      \pgfuseimage{sintef_l}\hfill\raisebox{.10cm}{Mathematics and Cybernetics}%
+      \pgfuseimage{sintef_r}
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.21\paperwidth,ht=0.43cm,leftskip=.08cm ,rightskip=.08cm]{}%
+      \usebeamerfont{title in head/foot}%
+      \raisebox{.10cm}{\insertshortdate}%
+      %\hskip1pt\raisebox{.05cm}{\insertslidenavigationsymbol}%
+      %\hfill\raisebox{.10cm}{\insertframenumber /\inserttotalframenumber}%
+    \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\pgfdeclarehorizontalshading[frametitle.bg,frametitle right.bg]{beamer@frametitleshade}{\paperheight}{%
+  color(0pt)=(frametitle.bg);
+  color(\paperwidth)=(frametitle.bg)}  %% Ingen skygge i horisontal retning %%
+
+\AtBeginDocument{
+  \pgfdeclareverticalshading{beamer@topshade}{\paperwidth}{%
+    color(0pt)=(bg);
+    color(4pt)=(black!50!bg)}
+}
+
+\addtobeamertemplate{headline}
+{}
+{%
+  \vskip-0.2pt
+  \pgfuseshading{beamer@topshade}
+  \vskip-2pt
+}
+
+
+\defbeamertemplate*{frametitle}{shadow theme}
+{%
+  \nointerlineskip%
+  \vskip-2pt%
+  \hbox{\leavevmode
+    \advance\beamer@leftmargin by -12bp%
+    \advance\beamer@rightmargin by -12bp%
+    \beamer@tempdim=\textwidth%
+    \advance\beamer@tempdim by \beamer@leftmargin%
+    \advance\beamer@tempdim by \beamer@rightmargin%
+    \hskip-\Gm@lmargin\hbox{%
+      \setbox\beamer@tempbox=\hbox{\begin{minipage}[b]{\paperwidth}%
+          \vbox{}\vskip-.75ex%
+          \leftskip0.3cm%
+          \rightskip0.3cm plus1fil\leavevmode
+          \insertframetitle%
+          \ifx\insertframesubtitle\@empty%
+            \strut\par%
+          \else
+            \par{\usebeamerfont*{framesubtitle}{\usebeamercolor[fg]{framesubtitle}\insertframesubtitle}\strut\par}%
+          \fi%
+          \nointerlineskip
+          \vbox{}%
+          \end{minipage}}%
+      \beamer@tempdim=\ht\beamer@tempbox%
+      \advance\beamer@tempdim by 2pt%
+      \begin{pgfpicture}{0pt}{0pt}{\paperwidth}{\beamer@tempdim}
+        \usebeamercolor{frametitle right}
+        \pgfrect[clip]{\pgforigin}{\pgfpoint{\paperwidth}{\beamer@tempdim}}
+        \pgfbox[left,base]{\pgfuseshading{beamer@frametitleshade}}
+      \end{pgfpicture}
+      \hskip-\paperwidth%
+      \box\beamer@tempbox%
+    }%
+    \hskip-\Gm@rmargin%
+  }%
+  \nointerlineskip
+    \vskip-0.2pt
+    \hbox to\textwidth{\hskip-\Gm@lmargin\pgfuseshading{beamer@topshade}\hskip-\Gm@rmargin}
+    \vskip-2pt
+}
+
+
+
+
+\mode
+<all>
